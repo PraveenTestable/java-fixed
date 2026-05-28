@@ -47,7 +47,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Dependency versions — pinned for Supply Chain Security (SCA) -->
-    <junit.version>5.10.2</junit.version>
+    <junit.version>6.1.0</junit.version>
     <jacoco.version>0.8.11</jacoco.version>
     <pmd.plugin.version>3.21.2</pmd.plugin.version>
     <checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
