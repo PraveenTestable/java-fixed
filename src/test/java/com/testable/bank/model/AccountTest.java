@@ -1,7 +1,3 @@
-/*
- * Copyright 2026 Testable.cloud
- * Licensed under the Apache License, Version 2.0 — see LICENSE.
- */
 package com.testable.bank.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

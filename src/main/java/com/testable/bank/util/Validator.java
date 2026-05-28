@@ -1,10 +1,3 @@
-/*
- * Copyright 2026 Testable.cloud
- * Licensed under the Apache License, Version 2.0 — see LICENSE.
- *
- * OWASP A03:2021 — Injection prevention: all public entry points
- * validate and sanitise input before use (Entry Point Sanitisation).
- */
 package com.testable.bank.util;
 
 import java.math.BigDecimal;
@@ -37,22 +30,22 @@ public final class Validator {
   }
 
   /**
-   * Validates an account identifier.
+   * Validates an account reference code.
    *
-   * @param accountId identifier to check
+   * @param acctCode reference code to check
    * @throws IllegalArgumentException when null, blank, too long, or contains illegal chars
    */
-  public static void validateAccountId(final String accountId) {
-    if (accountId == null || accountId.isBlank()) {
-      throw new IllegalArgumentException("Account ID must not be null or blank");
+  public static void validateAccountId(final String acctCode) {
+    if (acctCode == null || acctCode.isBlank()) {
+      throw new IllegalArgumentException("Account code must not be null or blank");
     }
-    if (accountId.length() > MAX_ID_LENGTH) {
+    if (acctCode.length() > MAX_ID_LENGTH) {
       throw new IllegalArgumentException(
-          "Account ID exceeds maximum length of " + MAX_ID_LENGTH);
+          "Account code exceeds maximum length of " + MAX_ID_LENGTH);
     }
-    if (!accountId.matches(SAFE_ID_PATTERN)) {
+    if (!acctCode.matches(SAFE_ID_PATTERN)) {
       throw new IllegalArgumentException(
-          "Account ID contains invalid characters; only A-Z, a-z, 0-9 and '-' are allowed");
+          "Account code contains invalid characters; only A-Z, a-z, 0-9 and '-' are allowed");
     }
   }
 

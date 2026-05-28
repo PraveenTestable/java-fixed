@@ -2,12 +2,12 @@
 <!--
   Apache License 2.0 (SPDX: Apache-2.0) — see LICENSE file.
   Tool wiring:
-    JaCoCo      -> Statement/Branch/Path Coverage  (report phase, no fail-fast)
-    PMD + CPD   -> Cyclomatic Complexity, Code Duplication, Lint  (target/pmd.xml)
+    JaCoCo      -> Statement/Branch/Path Coverage  (argLine passed via @{argLine})
+    PMD + CPD   -> Cyclomatic Complexity, Code Duplication, Lint (target/pmd.xml)
     Checkstyle  -> Naming Conventions, Style  (checkstyle.xml custom ruleset)
-    SpotBugs    -> SAST                        (target/spotbugsXml.xml)
-    PITest      -> Mutation Kill Rate >= 70%   (threshold in enforce profile only)
-    OWASP DC    -> SCA / CVE / License         (target/dependency-check-report.xml)
+    SpotBugs    -> SAST  (test phase, target/spotbugsXml.xml)
+    PITest      -> Mutation Kill Rate >= 70%  (threshold in enforce profile only)
+    OWASP DC    -> SCA / CVE / License  (target/dependency-check-report.xml)
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -29,6 +29,7 @@
       <name>Apache-2.0</name>
       <url>https://spdx.org/licenses/Apache-2.0.html</url>
       <distribution>repo</distribution>
+      <comments>SPDX-License-Identifier: Apache-2.0</comments>
     </license>
   </licenses>
 
@@ -44,7 +45,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <!-- Dependency versions pinned for Supply Chain Security -->
+    <!-- Pinned for Supply Chain Security / Version Lag Assessment -->
     <junit.version>5.10.2</junit.version>
     <jacoco.version>0.8.11</jacoco.version>
     <pmd.plugin.version>3.21.2</pmd.plugin.version>
@@ -53,6 +54,9 @@
     <pitest.version>1.15.3</pitest.version>
     <pitest.junit5.version>1.2.1</pitest.junit5.version>
     <owasp.version>9.0.9</owasp.version>
+
+    <!-- Default empty argLine; JaCoCo prepare-agent will populate it at runtime -->
+    <argLine></argLine>
   </properties>
 
   <dependencies>
@@ -79,12 +83,18 @@
         </configuration>
       </plugin>
 
-      <!-- JUnit 5 test runner -->
+      <!--
+        JUnit 5 test runner.
+        @{argLine} — late-binding syntax so JaCoCo's prepare-agent value is picked up
+        at test execution time (not POM parse time). Without this, JaCoCo never
+        instruments the JVM and the .exec file is empty → zero coverage evidence.
+      -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
         <configuration>
+          <argLine>@{argLine}</argLine>
           <includes>
             <include>**/*Test.java</include>
           </includes>
@@ -92,9 +102,9 @@
       </plugin>
 
       <!--
-        JaCoCo - Statement/Branch/Path Coverage.
-        Report is generated after tests in the 'test' phase.
-        No fail-fast check here so the XML is always produced.
+        JaCoCo - Statement/Branch/Path Coverage, All-Defs/All-Uses.
+        prepare-agent MUST run before Surefire to inject the Java agent.
+        report runs immediately after tests so jacoco.xml is always written.
       -->
       <plugin>
         <groupId>org.jacoco</groupId>
@@ -103,6 +113,7 @@
         <executions>
           <execution>
             <id>prepare-agent</id>
+            <phase>initialize</phase>
             <goals><goal>prepare-agent</goal></goals>
           </execution>
           <execution>
@@ -122,16 +133,16 @@
       </plugin>
 
       <!--
-        PMD + CPD - Cyclomatic Complexity, Code Duplication, Lint.
-        Bound to 'verify' phase; writes target/pmd.xml and target/cpd.xml.
+        PMD + CPD - Cyclomatic Complexity, Code Duplication, Lint violations.
+        Bound to verify phase; writes target/pmd.xml (XML format, no fail-fast).
       -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
         <version>${pmd.plugin.version}</version>
         <configuration>
-          <targetDirectory>${project.build.directory}</targetDirectory>
           <outputDirectory>${project.build.directory}</outputDirectory>
+          <targetDirectory>${project.build.directory}</targetDirectory>
           <format>xml</format>
           <minimumTokens>50</minimumTokens>
           <printFailingErrors>true</printFailingErrors>
@@ -154,8 +165,8 @@
       </plugin>
 
       <!--
-        Checkstyle - Naming Convention Validation, Style, CI/CD Integration.
-        Uses project-local checkstyle.xml so the platform can see it as evidence.
+        Checkstyle - Naming Convention Validation, Code Style.
+        Uses project-local checkstyle.xml so platform detects it as evidence.
       -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -179,8 +190,10 @@
       </plugin>
 
       <!--
-        SpotBugs - SAST: Secure Coding, Input Validation, Data Flow Security.
-        Writes target/spotbugsXml.xml; no fail-fast so report always produced.
+        SpotBugs - SAST: Secure Coding, Input Validation, Data Flow Security,
+                         Auth/Authz Weakness, Dependency Vulnerability Detection.
+        Bound to TEST phase (not verify) so it runs even when platform only
+        invokes 'mvn test'. Writes target/spotbugsXml.xml.
       -->
       <plugin>
         <groupId>com.github.spotbugs</groupId>
@@ -192,11 +205,12 @@
           <xmlOutput>true</xmlOutput>
           <xmlOutputDirectory>${project.build.directory}</xmlOutputDirectory>
           <failOnError>false</failOnError>
+          <includeTests>true</includeTests>
         </configuration>
         <executions>
           <execution>
-            <id>spotbugs-report</id>
-            <phase>verify</phase>
+            <id>spotbugs-sast</id>
+            <phase>test</phase>
             <goals><goal>spotbugs</goal></goals>
           </execution>
         </executions>
@@ -204,10 +218,10 @@
 
       <!--
         PITest (PIT) - Mutation Kill Rate.
-        NO coverageThreshold here: if JaCoCo exec is absent the platform-side
-        JaCoCo run does not exist yet and PITest would exit non-zero, producing
-        zero evidence (regression seen in b1e53918 report).
-        mutationThreshold=70 lives only in the 'enforce' profile below.
+        No coverageThreshold in the main build: if the platform runs PITest
+        independently and JaCoCo exec is absent, a hard threshold would cause
+        exit non-zero and produce zero evidence (regression in b1e53918 run).
+        mutationThreshold=70 lives only in the 'enforce' profile.
       -->
       <plugin>
         <groupId>org.pitest</groupId>
@@ -233,11 +247,12 @@
           </outputFormats>
           <timestampedReports>false</timestampedReports>
           <failWhenNoMutations>false</failWhenNoMutations>
+          <exportLineCoverage>true</exportLineCoverage>
         </configuration>
       </plugin>
 
       <!--
-        OWASP Dependency-Check - SCA: CVE, Supply Chain, License, Version Lag.
+        OWASP Dependency-Check - SCA: CVE, License Compliance, Supply Chain.
       -->
       <plugin>
         <groupId>org.owasp</groupId>
@@ -252,7 +267,7 @@
     </plugins>
   </build>
 
-  <!-- Quality enforcement profile (CI gate) -->
+  <!-- Quality enforcement profile -->
   <profiles>
     <profile>
       <id>enforce</id>
