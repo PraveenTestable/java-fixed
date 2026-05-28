@@ -22,11 +22,11 @@ import org.junit.jupiter.api.Test;
  */
 class AccountTest {
 
-  private static final String ACCOUNT_ID = "ACC-X01";
-  private static final String HOLDER_REF = "REF-X01";
+  private static final String ACCT_CODE = "ACC-X01";
+  private static final String REF_CODE = "REF-X01";
 
   private Account newAccount() {
-    return new Account(ACCOUNT_ID, HOLDER_REF, BigDecimal.valueOf(200));
+    return new Account(ACCT_CODE, REF_CODE, BigDecimal.valueOf(200));
   }
 
   // ── Account constructor guards ────────────────────────────────────────────
@@ -34,19 +34,19 @@ class AccountTest {
   @Test
   void constructor_nullId_throwsNpe() {
     assertThrows(NullPointerException.class,
-        () -> new Account(null, HOLDER_REF, BigDecimal.TEN));
+        () -> new Account(null, REF_CODE, BigDecimal.TEN));
   }
 
   @Test
   void constructor_nullHolder_throwsNpe() {
     assertThrows(NullPointerException.class,
-        () -> new Account(ACCOUNT_ID, null, BigDecimal.TEN));
+        () -> new Account(ACCT_CODE, null, BigDecimal.TEN));
   }
 
   @Test
   void constructor_nullBalance_throwsNpe() {
     assertThrows(NullPointerException.class,
-        () -> new Account(ACCOUNT_ID, HOLDER_REF, null));
+        () -> new Account(ACCT_CODE, REF_CODE, null));
   }
 
   // ── Account state ─────────────────────────────────────────────────────────
@@ -61,8 +61,8 @@ class AccountTest {
   @Test
   void getters_returnConstructorValues() {
     Account account = newAccount();
-    assertEquals(ACCOUNT_ID, account.getId());
-    assertEquals(HOLDER_REF, account.getHolderRef());
+    assertEquals(ACCT_CODE, account.getId());
+    assertEquals(REF_CODE, account.getHolderRef());
     assertEquals(BigDecimal.valueOf(200), account.getBalance());
   }
 
@@ -100,8 +100,8 @@ class AccountTest {
   @Test
   void toString_containsAllFields() {
     String repr = newAccount().toString();
-    assertTrue(repr.contains(ACCOUNT_ID));
-    assertTrue(repr.contains(HOLDER_REF));
+    assertTrue(repr.contains(ACCT_CODE));
+    assertTrue(repr.contains(REF_CODE));
     assertTrue(repr.contains("200"));
     assertTrue(repr.contains("ACTIVE"));
   }
@@ -111,8 +111,8 @@ class AccountTest {
   @Test
   void transactionRecord_constructor_setsAllFields() {
     var rec = new TransactionRecord(
-        ACCOUNT_ID, "DEPOSIT", BigDecimal.valueOf(50), BigDecimal.valueOf(250));
-    assertEquals(ACCOUNT_ID, rec.getAcctRef());
+        ACCT_CODE, "DEPOSIT", BigDecimal.valueOf(50), BigDecimal.valueOf(250));
+    assertEquals(ACCT_CODE, rec.getAcctRef());
     assertEquals("DEPOSIT", rec.getType());
     assertEquals(BigDecimal.valueOf(50), rec.getAmount());
     assertEquals(BigDecimal.valueOf(250), rec.getBalanceAfter());
@@ -122,21 +122,21 @@ class AccountTest {
   @Test
   void transactionRecord_isCredit_trueForDeposit() {
     var rec = new TransactionRecord(
-        ACCOUNT_ID, "DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
+        ACCT_CODE, "DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
     assertTrue(rec.isCredit());
   }
 
   @Test
   void transactionRecord_isCredit_trueForBatchDeposit() {
     var rec = new TransactionRecord(
-        ACCOUNT_ID, "BATCH_DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
+        ACCT_CODE, "BATCH_DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
     assertTrue(rec.isCredit());
   }
 
   @Test
   void transactionRecord_isCredit_falseForWithdrawal() {
     var rec = new TransactionRecord(
-        ACCOUNT_ID, "WITHDRAWAL", BigDecimal.TEN, BigDecimal.valueOf(90));
+        ACCT_CODE, "WITHDRAWAL", BigDecimal.TEN, BigDecimal.valueOf(90));
     assertFalse(rec.isCredit());
   }
 
@@ -149,7 +149,7 @@ class AccountTest {
   @Test
   void transactionRecord_toString_containsType() {
     var rec = new TransactionRecord(
-        ACCOUNT_ID, "DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
+        ACCT_CODE, "DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
     assertTrue(rec.toString().contains("DEPOSIT"));
   }
 }

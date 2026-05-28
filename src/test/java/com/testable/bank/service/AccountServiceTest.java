@@ -36,8 +36,8 @@ class AccountServiceTest {
   // Non-PII identifiers used in tests (no real personal data)
   private static final String ID_ALPHA = "T-001";
   private static final String ID_BETA = "T-002";
-  private static final String HOLDER_ALPHA = "REF-ALPHA";
-  private static final String HOLDER_BETA = "REF-BETA";
+  private static final String REF_ALPHA = "ACCT-REF-A";
+  private static final String REF_BETA = "ACCT-REF-B";
 
   private AccountService service;
 
@@ -50,44 +50,44 @@ class AccountServiceTest {
 
   @Test
   void createAccount_validArgs_returnsActiveAccount() {
-    var account = service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(500));
+    var account = service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(500));
     assertEquals(ID_ALPHA, account.getId());
-    assertEquals(HOLDER_ALPHA, account.getHolderRef());
+    assertEquals(REF_ALPHA, account.getHolderRef());
     assertEquals(BigDecimal.valueOf(500), account.getBalance());
     assertEquals(AccountStatus.ACTIVE, account.getStatus());
   }
 
   @Test
   void createAccount_duplicateId_throwsIllegalState() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     assertThrows(IllegalStateException.class,
-        () -> service.createAccount(ID_ALPHA, HOLDER_BETA, BigDecimal.valueOf(50)));
+        () -> service.createAccount(ID_ALPHA, REF_BETA, BigDecimal.valueOf(50)));
   }
 
   @Test
   void createAccount_nullId_throwsIllegalArgument() {
     assertThrows(IllegalArgumentException.class,
-        () -> service.createAccount(null, HOLDER_ALPHA, BigDecimal.valueOf(100)));
+        () -> service.createAccount(null, REF_ALPHA, BigDecimal.valueOf(100)));
   }
 
   @Test
   void createAccount_negativeBalance_throwsIllegalArgument() {
     assertThrows(IllegalArgumentException.class,
-        () -> service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(-1)));
+        () -> service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(-1)));
   }
 
   // ── deposit ──────────────────────────────────────────────────────────────
 
   @Test
   void deposit_validAmount_increasesBalance() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(50));
     assertEquals(BigDecimal.valueOf(150), balance(ID_ALPHA));
   }
 
   @Test
   void deposit_loggedAfterDeposit_recordExists() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(30));
     assertFalse(service.getLedger().isEmpty());
     assertEquals("DEPOSIT", service.getLedger().get(0).getType());
@@ -95,21 +95,21 @@ class AccountServiceTest {
 
   @Test
   void deposit_zeroAmount_throwsIllegalArgument() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     assertThrows(IllegalArgumentException.class,
         () -> service.deposit(ID_ALPHA, BigDecimal.ZERO));
   }
 
   @Test
   void deposit_nullAmount_throwsIllegalArgument() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     assertThrows(IllegalArgumentException.class,
         () -> service.deposit(ID_ALPHA, null));
   }
 
   @Test
   void deposit_suspendedAccount_throwsIllegalState() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.suspendAccount(ID_ALPHA);
     assertThrows(IllegalStateException.class,
         () -> service.deposit(ID_ALPHA, BigDecimal.TEN));
@@ -125,28 +125,28 @@ class AccountServiceTest {
 
   @Test
   void withdraw_sufficientFunds_decreasesBalance() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.withdraw(ID_ALPHA, BigDecimal.valueOf(40));
     assertEquals(BigDecimal.valueOf(60), balance(ID_ALPHA));
   }
 
   @Test
   void withdraw_exactBalance_leavesZero() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(50));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(50));
     service.withdraw(ID_ALPHA, BigDecimal.valueOf(50));
     assertEquals(BigDecimal.ZERO, balance(ID_ALPHA));
   }
 
   @Test
   void withdraw_insufficientFunds_throwsIllegalState() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(20));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(20));
     assertThrows(IllegalStateException.class,
         () -> service.withdraw(ID_ALPHA, BigDecimal.valueOf(50)));
   }
 
   @Test
   void withdraw_inactiveAccount_throwsIllegalState() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.suspendAccount(ID_ALPHA);
     assertThrows(IllegalStateException.class,
         () -> service.withdraw(ID_ALPHA, BigDecimal.TEN));
@@ -156,8 +156,8 @@ class AccountServiceTest {
 
   @Test
   void transfer_validAccounts_movesBalance() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(200));
-    service.createAccount(ID_BETA, HOLDER_BETA, BigDecimal.valueOf(50));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(200));
+    service.createAccount(ID_BETA, REF_BETA, BigDecimal.valueOf(50));
     service.transfer(ID_ALPHA, ID_BETA, BigDecimal.valueOf(80));
     assertEquals(BigDecimal.valueOf(120), balance(ID_ALPHA));
     assertEquals(BigDecimal.valueOf(130), balance(ID_BETA));
@@ -165,15 +165,15 @@ class AccountServiceTest {
 
   @Test
   void transfer_sameAccount_throwsIllegalArgument() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     assertThrows(IllegalArgumentException.class,
         () -> service.transfer(ID_ALPHA, ID_ALPHA, BigDecimal.TEN));
   }
 
   @Test
   void transfer_insufficientSource_throwsIllegalState() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(10));
-    service.createAccount(ID_BETA, HOLDER_BETA, BigDecimal.valueOf(50));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(10));
+    service.createAccount(ID_BETA, REF_BETA, BigDecimal.valueOf(50));
     assertThrows(IllegalStateException.class,
         () -> service.transfer(ID_ALPHA, ID_BETA, BigDecimal.valueOf(100)));
   }
@@ -192,7 +192,7 @@ class AccountServiceTest {
   @Tag("loop")
   void batchDeposit_singleEntry_oneTrip_depositsAmount() {
     // one-trip loop: body executes exactly once
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     Map<String, BigDecimal> result = service.batchDeposit(Map.of(ID_ALPHA, BigDecimal.valueOf(25)));
     assertEquals(1, result.size());
     assertEquals(BigDecimal.valueOf(125), result.get(ID_ALPHA));
@@ -203,8 +203,8 @@ class AccountServiceTest {
   @Tag("loop")
   void batchDeposit_multipleEntries_nTrip_depositsAll() {
     // n-trip loop: body executes multiple times
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
-    service.createAccount(ID_BETA, HOLDER_BETA, BigDecimal.valueOf(200));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_BETA, REF_BETA, BigDecimal.valueOf(200));
     Map<String, BigDecimal> requests = Map.of(
         ID_ALPHA, BigDecimal.valueOf(10),
         ID_BETA, BigDecimal.valueOf(20)
@@ -227,7 +227,7 @@ class AccountServiceTest {
   @Tag("loop")
   void batchDeposit_suspendedAccount_skipsEntry() {
     // loop body: nested condition — account exists but not active
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.suspendAccount(ID_ALPHA);
     Map<String, BigDecimal> result = service.batchDeposit(Map.of(ID_ALPHA, BigDecimal.TEN));
     assertTrue(result.isEmpty());
@@ -250,8 +250,8 @@ class AccountServiceTest {
   @Test
   @Tag("loop")
   void getTotalBalance_multipleAccounts_returnsSum() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(300));
-    service.createAccount(ID_BETA, HOLDER_BETA, BigDecimal.valueOf(150));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(300));
+    service.createAccount(ID_BETA, REF_BETA, BigDecimal.valueOf(150));
     assertEquals(BigDecimal.valueOf(450), service.getTotalBalance());
   }
 
@@ -266,8 +266,8 @@ class AccountServiceTest {
   @Test
   @Tag("loop")
   void findActiveAccountIds_mixedStatuses_returnsOnlyActive() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
-    service.createAccount(ID_BETA, HOLDER_BETA, BigDecimal.valueOf(50));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_BETA, REF_BETA, BigDecimal.valueOf(50));
     service.suspendAccount(ID_BETA);
     List<String> active = service.findActiveAccountIds();
     assertEquals(1, active.size());
@@ -280,7 +280,7 @@ class AccountServiceTest {
   @Tag("nested")
   void getWithdrawableBalance_activeSufficientBalance_returnsSurplus() {
     // path: active=true, surplus>0
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(200));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(200));
     BigDecimal withdrawable = service.getWithdrawableBalance(ID_ALPHA, BigDecimal.valueOf(50));
     assertEquals(BigDecimal.valueOf(150), withdrawable);
   }
@@ -289,7 +289,7 @@ class AccountServiceTest {
   @Tag("nested")
   void getWithdrawableBalance_activeInsufficientBalance_returnsZero() {
     // path: active=true, surplus<=0
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(30));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(30));
     BigDecimal withdrawable = service.getWithdrawableBalance(ID_ALPHA, BigDecimal.valueOf(50));
     assertEquals(BigDecimal.ZERO, withdrawable);
   }
@@ -298,7 +298,7 @@ class AccountServiceTest {
   @Tag("nested")
   void getWithdrawableBalance_suspendedAccount_returnsZero() {
     // path: active=false (outer if not taken)
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(500));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(500));
     service.suspendAccount(ID_ALPHA);
     BigDecimal withdrawable = service.getWithdrawableBalance(ID_ALPHA, BigDecimal.ZERO);
     assertEquals(BigDecimal.ZERO, withdrawable);
@@ -308,7 +308,7 @@ class AccountServiceTest {
   @Tag("nested")
   void getWithdrawableBalance_exactMinimum_returnsZero() {
     // boundary: balance == minimum → surplus == 0 → inner if not taken
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     BigDecimal withdrawable = service.getWithdrawableBalance(ID_ALPHA, BigDecimal.valueOf(100));
     assertEquals(BigDecimal.ZERO, withdrawable);
   }
@@ -317,10 +317,10 @@ class AccountServiceTest {
 
   @Test
   void findAccount_existing_returnsAccount() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     Optional<com.testable.bank.model.Account> result = service.findAccount(ID_ALPHA);
     assertTrue(result.isPresent());
-    assertEquals(HOLDER_ALPHA, result.get().getHolderRef());
+    assertEquals(REF_ALPHA, result.get().getHolderRef());
   }
 
   @Test
@@ -332,7 +332,7 @@ class AccountServiceTest {
 
   @Test
   void suspendAccount_active_changeStatus() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.suspendAccount(ID_ALPHA);
     assertEquals(AccountStatus.SUSPENDED, status(ID_ALPHA));
   }
@@ -344,14 +344,14 @@ class AccountServiceTest {
 
   @Test
   void closeAccount_zeroBalance_changesStatusToClosed() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.ZERO);
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.ZERO);
     service.closeAccount(ID_ALPHA);
     assertEquals(AccountStatus.CLOSED, status(ID_ALPHA));
   }
 
   @Test
   void closeAccount_nonZeroBalance_throwsIllegalState() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     assertThrows(IllegalStateException.class, () -> service.closeAccount(ID_ALPHA));
   }
 
@@ -364,7 +364,7 @@ class AccountServiceTest {
 
   @Test
   void ledger_afterDepositAndWithdraw_hasCorrectEntries() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(200));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(200));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(50));
     service.withdraw(ID_ALPHA, BigDecimal.valueOf(30));
     List<com.testable.bank.model.TransactionRecord> log = service.getLedger();
@@ -377,21 +377,21 @@ class AccountServiceTest {
 
   @Test
   void ledger_isCredit_trueForDeposit() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(10));
     assertTrue(service.getLedger().get(0).isCredit());
   }
 
   @Test
   void ledger_isCredit_falseForWithdrawal() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.withdraw(ID_ALPHA, BigDecimal.valueOf(10));
     assertFalse(service.getLedger().get(0).isCredit());
   }
 
   @Test
   void ledger_toStringContainsAcctRef() {
-    service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
+    service.createAccount(ID_ALPHA, REF_ALPHA, BigDecimal.valueOf(100));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(5));
     String repr = service.getLedger().get(0).toString();
     assertTrue(repr.contains(ID_ALPHA));

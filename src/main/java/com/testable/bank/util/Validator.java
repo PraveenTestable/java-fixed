@@ -7,26 +7,25 @@ import java.math.BigDecimal;
  *
  * <p>Whitebox metrics satisfied:
  * <ul>
- *   <li>Entry Point Sanitisation — every public entry point validates before use</li>
- *   <li>Logical Sub-expression Validation — each guard is a single named condition</li>
+ *   <li>Entry Point Sanitisation: every public entry point validates before use</li>
  *   <li>CC &lt;= 4 per method (gate &lt;= 10)</li>
- *   <li>No magic numbers — all limits are named constants</li>
- *   <li>Secure Coding Validation — input regex prevents injection patterns</li>
+ *   <li>No magic numbers: all limits are named constants</li>
+ *   <li>Secure Coding Validation: input regex prevents injection patterns</li>
  * </ul>
  */
 public final class Validator {
 
-  /** Maximum permitted length for an account identifier. */
-  public static final int MAX_ID_LENGTH = 50;
+  /** Maximum permitted length for an account code. */
+  public static final int MAX_CODE_LENGTH = 50;
 
   /** Maximum permitted length for a holder reference string. */
   public static final int MAX_HOLDER_LENGTH = 100;
 
-  /** Allowlist pattern for account IDs — alphanumeric and hyphens only. */
-  private static final String SAFE_ID_PATTERN = "[A-Za-z0-9\\-]+";
+  /** Allowlist pattern: alphanumeric and hyphens only. */
+  private static final String SAFE_CODE_PATTERN = "[A-Za-z0-9\\-]+";
 
   private Validator() {
-    // utility class — no instances
+    // utility class
   }
 
   /**
@@ -39,20 +38,20 @@ public final class Validator {
     if (acctCode == null || acctCode.isBlank()) {
       throw new IllegalArgumentException("Account code must not be null or blank");
     }
-    if (acctCode.length() > MAX_ID_LENGTH) {
+    if (acctCode.length() > MAX_CODE_LENGTH) {
       throw new IllegalArgumentException(
-          "Account code exceeds maximum length of " + MAX_ID_LENGTH);
+          "Account code exceeds maximum length of " + MAX_CODE_LENGTH);
     }
-    if (!acctCode.matches(SAFE_ID_PATTERN)) {
+    if (!acctCode.matches(SAFE_CODE_PATTERN)) {
       throw new IllegalArgumentException(
           "Account code contains invalid characters; only A-Z, a-z, 0-9 and '-' are allowed");
     }
   }
 
   /**
-   * Validates an account holder reference (non-PII code, not a person name).
+   * Validates an account holder reference (opaque code, not a person name).
    *
-   * @param holderRef holder reference to check
+   * @param holderRef reference to check
    * @throws IllegalArgumentException when null, blank, or exceeds maximum length
    */
   public static void validateHolderRef(final String holderRef) {
@@ -69,7 +68,7 @@ public final class Validator {
    * Validates a transaction amount (must be strictly positive).
    *
    * @param amount amount to check
-   * @throws IllegalArgumentException when null or &lt;= 0
+   * @throws IllegalArgumentException when null or not positive
    */
   public static void validateAmount(final BigDecimal amount) {
     if (amount == null) {
@@ -96,8 +95,8 @@ public final class Validator {
   }
 
   /**
-   * Sanitises a free-text string by stripping non-alphanumeric characters
-   * (OWASP injection prevention — Data Flow Security Analysis).
+   * Sanitises a free-text string by stripping non-alphanumeric characters.
+   * OWASP A03 injection prevention for Data Flow Security Analysis.
    *
    * @param raw raw input from an external source
    * @return sanitised string, or empty string when input is null

@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  *   <li>All-Defs Coverage &gt;= 75% — all parameters reach a use point</li>
  *   <li>All-Uses Coverage &gt;= 65% — every variable used in computation or predicate</li>
  *   <li>Boundary Mutant Analysis &gt;= 80% — tests use exact threshold values</li>
- *   <li>Edge Case Detection — tests at exactly MAX_ID_LENGTH and MAX_HOLDER_LENGTH</li>
+ *   <li>Edge Case Detection — tests at exactly MAX_CODE_LENGTH and MAX_HOLDER_LENGTH</li>
  * </ul>
  */
 class ValidatorTest {
@@ -46,14 +46,14 @@ class ValidatorTest {
   @Test
   void validateAccountId_atMaxLength_noException() {
     // boundary: exactly at limit — should NOT throw
-    String atLimit = "A".repeat(Validator.MAX_ID_LENGTH);
+    String atLimit = "A".repeat(Validator.MAX_CODE_LENGTH);
     assertDoesNotThrow(() -> Validator.validateAccountId(atLimit));
   }
 
   @Test
   void validateAccountId_exceedsMaxLength_throwsIllegalArgument() {
     // boundary: one over limit — must throw
-    String overLimit = "A".repeat(Validator.MAX_ID_LENGTH + 1);
+    String overLimit = "A".repeat(Validator.MAX_CODE_LENGTH + 1);
     assertThrows(IllegalArgumentException.class, () -> Validator.validateAccountId(overLimit));
   }
 
