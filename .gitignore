@@ -1,0 +1,25 @@
+# macOS metadata — never commit (prevents Secrets-in-Git-History false positives)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Maven build outputs
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE files
+.idea/
+*.iml
+.eclipse/
+.classpath
+.project
+.settings/
+
+# Log files
+*.log
+
+# OS generated files
+Thumbs.db
+ehthumbs.db

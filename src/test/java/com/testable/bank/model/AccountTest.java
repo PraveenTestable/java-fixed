@@ -1,7 +1,12 @@
+/*
+ * Copyright 2026 Testable.cloud
+ * Licensed under the Apache License, Version 2.0 — see LICENSE.
+ */
 package com.testable.bank.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,38 +14,46 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link Account}.
+ * Unit tests for {@link Account} and {@link TransactionRecord}.
  *
  * <p>Coverage targets (WB metrics):
  * <ul>
- *   <li>Statement Coverage &gt;= 80% (gate)</li>
- *   <li>Branch Coverage &gt;= 70% (gate)</li>
- *   <li>Each method has at least one dedicated test (Test Case Granularity)</li>
+ *   <li>Statement Coverage &gt;= 80% — every getter and branch exercised</li>
+ *   <li>Branch Coverage &gt;= 70% — isActive() true and false paths</li>
+ *   <li>All-Defs Coverage — every field assigned in constructor is read</li>
+ *   <li>Mutation Kill Rate — assertions use exact values</li>
  * </ul>
  */
 class AccountTest {
 
+  private static final String ACCOUNT_ID = "ACC-X01";
+  private static final String HOLDER_REF = "REF-X01";
+
   private Account newAccount() {
-    return new Account("A-01", "Alice", BigDecimal.valueOf(200));
+    return new Account(ACCOUNT_ID, HOLDER_REF, BigDecimal.valueOf(200));
   }
+
+  // ── Account constructor guards ────────────────────────────────────────────
 
   @Test
   void constructor_nullId_throwsNpe() {
     assertThrows(NullPointerException.class,
-        () -> new Account(null, "Alice", BigDecimal.TEN));
+        () -> new Account(null, HOLDER_REF, BigDecimal.TEN));
   }
 
   @Test
-  void constructor_nullOwner_throwsNpe() {
+  void constructor_nullHolder_throwsNpe() {
     assertThrows(NullPointerException.class,
-        () -> new Account("A-01", null, BigDecimal.TEN));
+        () -> new Account(ACCOUNT_ID, null, BigDecimal.TEN));
   }
 
   @Test
   void constructor_nullBalance_throwsNpe() {
     assertThrows(NullPointerException.class,
-        () -> new Account("A-01", "Alice", null));
+        () -> new Account(ACCOUNT_ID, HOLDER_REF, null));
   }
+
+  // ── Account state ─────────────────────────────────────────────────────────
 
   @Test
   void constructor_validArgs_setsActiveStatus() {
@@ -52,8 +65,8 @@ class AccountTest {
   @Test
   void getters_returnConstructorValues() {
     Account account = newAccount();
-    assertEquals("A-01", account.getId());
-    assertEquals("Alice", account.getOwner());
+    assertEquals(ACCOUNT_ID, account.getId());
+    assertEquals(HOLDER_REF, account.getHolderRef());
     assertEquals(BigDecimal.valueOf(200), account.getBalance());
   }
 
@@ -65,12 +78,82 @@ class AccountTest {
   }
 
   @Test
+  void isActive_afterClose_returnsFalse() {
+    Account account = newAccount();
+    account.setStatus(Account.AccountStatus.CLOSED);
+    assertFalse(account.isActive());
+  }
+
+  @Test
+  void setBalance_updatesValue() {
+    Account account = newAccount();
+    account.setBalance(BigDecimal.valueOf(999));
+    assertEquals(BigDecimal.valueOf(999), account.getBalance());
+  }
+
+  @Test
   void setBalance_nullArg_throwsNpe() {
     assertThrows(NullPointerException.class, () -> newAccount().setBalance(null));
   }
 
   @Test
-  void toString_containsId() {
-    assertTrue(newAccount().toString().contains("A-01"));
+  void setStatus_nullArg_throwsNpe() {
+    assertThrows(NullPointerException.class, () -> newAccount().setStatus(null));
+  }
+
+  @Test
+  void toString_containsAllFields() {
+    String repr = newAccount().toString();
+    assertTrue(repr.contains(ACCOUNT_ID));
+    assertTrue(repr.contains(HOLDER_REF));
+    assertTrue(repr.contains("200"));
+    assertTrue(repr.contains("ACTIVE"));
+  }
+
+  // ── TransactionRecord ─────────────────────────────────────────────────────
+
+  @Test
+  void transactionRecord_constructor_setsAllFields() {
+    var rec = new TransactionRecord(
+        ACCOUNT_ID, "DEPOSIT", BigDecimal.valueOf(50), BigDecimal.valueOf(250));
+    assertEquals(ACCOUNT_ID, rec.getAccountId());
+    assertEquals("DEPOSIT", rec.getType());
+    assertEquals(BigDecimal.valueOf(50), rec.getAmount());
+    assertEquals(BigDecimal.valueOf(250), rec.getBalanceAfter());
+    assertNotNull(rec.getTimestamp());
+  }
+
+  @Test
+  void transactionRecord_isCredit_trueForDeposit() {
+    var rec = new TransactionRecord(
+        ACCOUNT_ID, "DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
+    assertTrue(rec.isCredit());
+  }
+
+  @Test
+  void transactionRecord_isCredit_trueForBatchDeposit() {
+    var rec = new TransactionRecord(
+        ACCOUNT_ID, "BATCH_DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
+    assertTrue(rec.isCredit());
+  }
+
+  @Test
+  void transactionRecord_isCredit_falseForWithdrawal() {
+    var rec = new TransactionRecord(
+        ACCOUNT_ID, "WITHDRAWAL", BigDecimal.TEN, BigDecimal.valueOf(90));
+    assertFalse(rec.isCredit());
+  }
+
+  @Test
+  void transactionRecord_nullAccountId_throwsNpe() {
+    assertThrows(NullPointerException.class,
+        () -> new TransactionRecord(null, "DEPOSIT", BigDecimal.TEN, BigDecimal.TEN));
+  }
+
+  @Test
+  void transactionRecord_toString_containsType() {
+    var rec = new TransactionRecord(
+        ACCOUNT_ID, "DEPOSIT", BigDecimal.TEN, BigDecimal.valueOf(110));
+    assertTrue(rec.toString().contains("DEPOSIT"));
   }
 }

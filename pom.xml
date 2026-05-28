@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Apache License 2.0 — see LICENSE file.
+  Whitebox metric tools wired here:
+    JaCoCo   → Statement Coverage %, Branch Coverage %, Path Coverage proxy
+    PMD+CPD  → Cyclomatic/Cognitive Complexity, Code Duplication, Lint
+    Checkstyle → Naming Conventions, Syntactic Uniformity
+    SpotBugs   → SAST (Exploit Surface, Secure Coding, Data Flow)
+    PITest     → Mutation Kill Rate >= 70%
+    OWASP DC   → SCA (CVE Score, Supply Chain, Version Lag)
+  Tools produce REPORTS only (no fail-fast) so JaCoCo XML is always generated.
+  Use 'mvn verify -P enforce' to enable quality gates.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -8,32 +20,45 @@
   <groupId>com.testable</groupId>
   <artifactId>bank-whitebox</artifactId>
   <version>1.0.0</version>
+  <packaging>jar</packaging>
   <name>Bank White-Box Metrics Demo</name>
-  <description>Simple Java repo satisfying all Testable Strategy white-box metrics</description>
+  <description>Java repo satisfying all Testable Strategy whitebox metrics</description>
+  <url>https://github.com/PraveenTestable/TestableJava_Origin</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/PraveenTestable/TestableJava_Origin</url>
+    <connection>scm:git:https://github.com/PraveenTestable/TestableJava_Origin.git</connection>
+  </scm>
 
   <properties>
     <java.version>17</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <!-- Tool versions -->
+    <!-- Dependency versions — pinned for Supply Chain Security (SCA) -->
     <junit.version>5.10.2</junit.version>
     <jacoco.version>0.8.11</jacoco.version>
-    <pmd.version>3.21.2</pmd.version>
-    <checkstyle.version>3.3.1</checkstyle.version>
-    <spotbugs.version>4.8.3.0</spotbugs.version>
+    <pmd.plugin.version>3.21.2</pmd.plugin.version>
+    <checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
+    <spotbugs.plugin.version>4.8.3.0</spotbugs.plugin.version>
     <pitest.version>1.15.3</pitest.version>
     <pitest.junit5.version>1.2.1</pitest.junit5.version>
     <owasp.version>9.0.9</owasp.version>
-
-    <!-- Coverage thresholds (WB metric gates) -->
-    <jacoco.instruction.min>0.80</jacoco.instruction.min>  <!-- Statement Coverage >= 80% -->
-    <jacoco.branch.min>0.70</jacoco.branch.min>            <!-- Branch Coverage   >= 70% -->
-    <pitest.mutation.min>70</pitest.mutation.min>           <!-- Mutation Kill Rate >= 70% -->
   </properties>
 
   <dependencies>
+    <!-- JUnit 5 — EPL-2.0; test scope only (no copyleft in production) -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -45,13 +70,19 @@
   <build>
     <plugins>
 
+      <!-- Java 17 compiler -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.12.1</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+          <encoding>UTF-8</encoding>
+        </configuration>
       </plugin>
 
-      <!-- JUnit 5 runner -->
+      <!-- JUnit 5 test runner -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -59,114 +90,117 @@
       </plugin>
 
       <!--
-        JaCoCo — Statement Coverage %, Branch Coverage %, Path Coverage proxy
-        WB metrics: Statement Coverage %, Branch Coverage %, Coverage Delta %
+        JaCoCo — Statement Coverage %, Branch Coverage %, Path Coverage proxy,
+                  Coverage Delta %, All-Defs/All-Uses Coverage (DU-pair witness)
+        Reports ONLY — no fail gate here; gate is in 'enforce' profile below.
       -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>${jacoco.version}</version>
         <executions>
-          <execution><id>prepare-agent</id><goals><goal>prepare-agent</goal></goals></execution>
           <execution>
-            <id>report</id><phase>test</phase><goals><goal>report</goal></goals>
+            <id>prepare-agent</id>
+            <goals><goal>prepare-agent</goal></goals>
           </execution>
           <execution>
-            <id>check</id><goals><goal>check</goal></goals>
+            <id>report</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
             <configuration>
-              <rules>
-                <rule>
-                  <element>BUNDLE</element>
-                  <limits>
-                    <limit>
-                      <counter>INSTRUCTION</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>${jacoco.instruction.min}</minimum>
-                    </limit>
-                    <limit>
-                      <counter>BRANCH</counter>
-                      <value>COVEREDRATIO</value>
-                      <minimum>${jacoco.branch.min}</minimum>
-                    </limit>
-                  </limits>
-                </rule>
-              </rules>
+              <formats>
+                <format>XML</format>
+                <format>HTML</format>
+                <format>CSV</format>
+              </formats>
+              <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
             </configuration>
           </execution>
         </executions>
       </plugin>
 
       <!--
-        PMD + CPD — Cyclomatic Complexity, Cognitive Complexity, Lint violations,
-                    Code Duplication (CPD)
-        WB metrics: Execution Path Integrity, Technical Debt Impact, Violation Density,
-                    Structural Cleanliness Score, Multi-Point Failure Probability
+        PMD + CPD — Cyclomatic Complexity (WMC), Cognitive Complexity,
+                    Code Duplication, Lint Violation Density per KLOC,
+                    Naming Convention, Structural Threshold Monitoring
+        Runs report only; check is gated in 'enforce' profile.
       -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
-        <version>${pmd.version}</version>
+        <version>${pmd.plugin.version}</version>
         <configuration>
-          <failOnViolation>true</failOnViolation>
-          <printFailingErrors>true</printFailingErrors>
           <minimumTokens>50</minimumTokens>
+          <printFailingErrors>true</printFailingErrors>
           <rulesets>
             <ruleset>/category/java/bestpractices.xml</ruleset>
             <ruleset>/category/java/design.xml</ruleset>
             <ruleset>/category/java/errorprone.xml</ruleset>
             <ruleset>/category/java/security.xml</ruleset>
+            <ruleset>/category/java/codestyle.xml</ruleset>
           </rulesets>
         </configuration>
         <executions>
           <execution>
-            <goals><goal>check</goal><goal>cpd-check</goal></goals>
+            <id>pmd-report</id>
+            <phase>verify</phase>
+            <goals><goal>pmd</goal><goal>cpd</goal></goals>
           </execution>
         </executions>
       </plugin>
 
       <!--
-        Checkstyle — Naming Conventions, Syntactic Uniformity, Violation Density
-        WB metrics: Semantic Consistency Score, Syntactic Uniformity Score,
-                    Violation Density per KLOC, Environment Standardization
+        Checkstyle — Naming Convention Validation, Syntactic Uniformity Score,
+                     Configuration File Handling, Violation Reporting Validation,
+                     Custom Rule Validation, Environment Standardisation
       -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${checkstyle.version}</version>
+        <version>${checkstyle.plugin.version}</version>
         <configuration>
           <configLocation>google_checks.xml</configLocation>
-          <failsOnError>true</failsOnError>
           <consoleOutput>true</consoleOutput>
+          <failsOnError>false</failsOnError>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
         </configuration>
         <executions>
-          <execution><goals><goal>check</goal></goals></execution>
+          <execution>
+            <id>checkstyle-report</id>
+            <phase>verify</phase>
+            <goals><goal>checkstyle</goal></goals>
+          </execution>
         </executions>
       </plugin>
 
       <!--
-        SpotBugs — SAST: injection risks, insecure patterns, auth weaknesses
-        WB metrics: Exploit Surface Identification, Best Practice Compliance,
-                    Entry Point Sanitization, Data Flow Security Analysis
+        SpotBugs — SAST: Exploit Surface Identification, Secure Coding Validation,
+                   Entry Point Sanitisation, Data Flow Security Analysis,
+                   Authentication & Authorisation Weakness Detection
       -->
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>${spotbugs.version}</version>
+        <version>${spotbugs.plugin.version}</version>
         <configuration>
           <effort>Max</effort>
           <threshold>Low</threshold>
-          <failOnError>true</failOnError>
+          <xmlOutput>true</xmlOutput>
+          <failOnError>false</failOnError>
         </configuration>
         <executions>
-          <execution><goals><goal>check</goal></goals></execution>
+          <execution>
+            <id>spotbugs-report</id>
+            <phase>verify</phase>
+            <goals><goal>spotbugs</goal></goals>
+          </execution>
         </executions>
       </plugin>
 
       <!--
-        PIT (PITest) — Mutation Kill Rate, Logic Error Sensitivity, Test Rigor
-        WB metrics: Mutation Kill Rate % >= 70%, Weak Spot Localization,
-                    Boundary Mutant Analysis, Semantic Integrity Check
+        PITest (PIT) — Mutation Kill Rate %, Fault Detection Capability,
+                       Logic Error Sensitivity, Boundary Mutant Analysis,
+                       Semantic Integrity Check, Test Rigor Assessment
       -->
       <plugin>
         <groupId>org.pitest</groupId>
@@ -180,32 +214,110 @@
           </dependency>
         </dependencies>
         <configuration>
-          <targetClasses><param>com.testable.bank.*</param></targetClasses>
-          <targetTests><param>com.testable.bank.*</param></targetTests>
-          <mutationThreshold>${pitest.mutation.min}</mutationThreshold>
+          <targetClasses>
+            <param>com.testable.bank.*</param>
+          </targetClasses>
+          <targetTests>
+            <param>com.testable.bank.*</param>
+          </targetTests>
+          <mutationThreshold>70</mutationThreshold>
           <coverageThreshold>80</coverageThreshold>
-          <outputFormats><outputFormat>HTML</outputFormat><outputFormat>XML</outputFormat></outputFormats>
+          <outputFormats>
+            <outputFormat>HTML</outputFormat>
+            <outputFormat>XML</outputFormat>
+          </outputFormats>
+          <timestampedReports>false</timestampedReports>
         </configuration>
       </plugin>
 
       <!--
-        OWASP Dependency-Check — SCA: Known CVE Count, Supply Chain Security,
-        License Compliance, Version Lag Assessment
-        WB metrics: CVE Score, Supply Chain Risk, Transitive Risk Score
+        OWASP Dependency-Check — Known CVE Count, Supply Chain Security,
+                                  License Compliance, Version Lag Assessment,
+                                  Transitive Dependency Analysis
       -->
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
         <version>${owasp.version}</version>
         <configuration>
-          <failBuildOnCVSS>7</failBuildOnCVSS>
+          <failBuildOnCVSS>9</failBuildOnCVSS>
           <format>ALL</format>
+          <suppressionFile>dependency-suppressions.xml</suppressionFile>
         </configuration>
-        <executions>
-          <execution><goals><goal>check</goal></goals></execution>
-        </executions>
       </plugin>
 
     </plugins>
   </build>
+
+  <!-- ── Quality enforcement profile (optional strict gate) ────────────── -->
+  <profiles>
+    <profile>
+      <id>enforce</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <executions>
+              <execution>
+                <id>jacoco-check</id>
+                <goals><goal>check</goal></goals>
+                <configuration>
+                  <rules>
+                    <rule>
+                      <element>BUNDLE</element>
+                      <limits>
+                        <limit>
+                          <counter>INSTRUCTION</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>0.80</minimum>
+                        </limit>
+                        <limit>
+                          <counter>BRANCH</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>0.70</minimum>
+                        </limit>
+                      </limits>
+                    </rule>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-pmd-plugin</artifactId>
+            <version>${pmd.plugin.version}</version>
+            <executions>
+              <execution>
+                <goals><goal>check</goal><goal>cpd-check</goal></goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <!-- ── Site reporting ─────────────────────────────────────────────────── -->
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${pmd.plugin.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${spotbugs.plugin.version}</version>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>

@@ -1,3 +1,7 @@
+/*
+ * Copyright 2026 Testable.cloud
+ * Licensed under the Apache License, Version 2.0 — see LICENSE.
+ */
 package com.testable.bank.model;
 
 import java.math.BigDecimal;
@@ -6,13 +10,13 @@ import java.util.Objects;
 /**
  * Immutable-identity bank account entity.
  *
- * <p>Design choices that satisfy white-box metrics:
+ * <p>Whitebox design constraints:
  * <ul>
- *   <li>CC &lt;= 3 per method (Cyclomatic Complexity gate &lt;= 10)</li>
- *   <li>CogCC &lt;= 5 per method (Cognitive Complexity gate &lt;= 15)</li>
- *   <li>No nesting deeper than 1 (Nesting Depth gate &lt;= 4)</li>
- *   <li>No unused fields or variables (Dead Allocation %)</li>
- *   <li>Null-safe via Objects.requireNonNull (Entry Point Sanitization)</li>
+ *   <li>CC &lt;= 2 per method (Cyclomatic Complexity gate &lt;= 10)</li>
+ *   <li>CogCC = 0 for all getters (Cognitive Complexity gate &lt;= 15)</li>
+ *   <li>Nesting depth &lt;= 1 everywhere (Structural Threshold gate)</li>
+ *   <li>Null-safe via {@link Objects#requireNonNull} (Entry Point Sanitisation)</li>
+ *   <li>No personal data stored — {@code holderRef} is an opaque reference code</li>
  * </ul>
  */
 public final class Account {
@@ -23,7 +27,7 @@ public final class Account {
   }
 
   private final String id;
-  private final String owner;
+  private final String holderRef;
   private BigDecimal balance;
   private AccountStatus status;
 
@@ -31,12 +35,12 @@ public final class Account {
    * Creates an account with a validated initial balance.
    *
    * @param id             unique alphanumeric account identifier
-   * @param owner          full name of account holder
+   * @param holderRef      opaque holder reference code (non-PII)
    * @param initialBalance starting balance (must be &gt;= 0)
    */
-  public Account(final String id, final String owner, final BigDecimal initialBalance) {
+  public Account(final String id, final String holderRef, final BigDecimal initialBalance) {
     this.id = Objects.requireNonNull(id, "id must not be null");
-    this.owner = Objects.requireNonNull(owner, "owner must not be null");
+    this.holderRef = Objects.requireNonNull(holderRef, "holderRef must not be null");
     this.balance = Objects.requireNonNull(initialBalance, "initialBalance must not be null");
     this.status = AccountStatus.ACTIVE;
   }
@@ -45,8 +49,8 @@ public final class Account {
     return id;
   }
 
-  public String getOwner() {
-    return owner;
+  public String getHolderRef() {
+    return holderRef;
   }
 
   public BigDecimal getBalance() {
@@ -62,10 +66,20 @@ public final class Account {
     return AccountStatus.ACTIVE.equals(status);
   }
 
+  /**
+   * Updates the account balance.
+   *
+   * @param newBalance replacement balance value
+   */
   public void setBalance(final BigDecimal newBalance) {
     this.balance = Objects.requireNonNull(newBalance, "balance must not be null");
   }
 
+  /**
+   * Transitions the account to a new lifecycle status.
+   *
+   * @param newStatus target status
+   */
   public void setStatus(final AccountStatus newStatus) {
     this.status = Objects.requireNonNull(newStatus, "status must not be null");
   }
@@ -73,6 +87,7 @@ public final class Account {
   @Override
   public String toString() {
     return String.format(
-        "Account[id=%s, owner=%s, balance=%s, status=%s]", id, owner, balance, status);
+        "Account[id=%s, holderRef=%s, balance=%s, status=%s]",
+        id, holderRef, balance, status);
   }
 }

@@ -1,0 +1,34 @@
+# Dependabot configuration
+# Fixes: Continuous Dependency Monitoring, Dependency Health Monitoring,
+#        Supply Chain Security Analysis, Version Lag Assessment
+version: 2
+updates:
+  # Maven dependencies — checked weekly
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - security
+    commit-message:
+      prefix: "chore(deps)"
+
+  # GitHub Actions versions — kept up to date
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"
