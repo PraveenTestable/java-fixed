@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
  *   <li>All-Defs Coverage — every field assigned in constructor is read</li>
  *   <li>Mutation Kill Rate — assertions use exact values</li>
  * </ul>
+ * Test
  */
 class AccountTest {
 
