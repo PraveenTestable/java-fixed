@@ -33,14 +33,14 @@ jobs:
         run: mvn -B test jacoco:report --file pom.xml
 
       - name: Upload JaCoCo XML report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-xml
           path: target/site/jacoco/jacoco.xml
           retention-days: 7
 
       - name: Upload JaCoCo HTML report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-html
           path: target/site/jacoco/
@@ -64,7 +64,7 @@ jobs:
         run: mvn -B test org.pitest:pitest-maven:mutationCoverage --file pom.xml
 
       - name: Upload PITest report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pitest-report
           path: target/pit-reports/
@@ -97,21 +97,21 @@ jobs:
         run: mvn -B spotbugs:spotbugs --file pom.xml
 
       - name: Upload PMD report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pmd-report
           path: target/pmd.xml
           retention-days: 7
 
       - name: Upload Checkstyle report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: checkstyle-report
           path: target/checkstyle-result.xml
           retention-days: 7
 
       - name: Upload SpotBugs report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: spotbugs-report
           path: target/spotbugsXml.xml
@@ -136,7 +136,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Dependency Check report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependency-check-report
           path: target/dependency-check-report.*
