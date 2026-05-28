@@ -116,7 +116,7 @@ class AccountTest {
   void transactionRecord_constructor_setsAllFields() {
     var rec = new TransactionRecord(
         ACCOUNT_ID, "DEPOSIT", BigDecimal.valueOf(50), BigDecimal.valueOf(250));
-    assertEquals(ACCOUNT_ID, rec.getAccountId());
+    assertEquals(ACCOUNT_ID, rec.getAcctRef());
     assertEquals("DEPOSIT", rec.getType());
     assertEquals(BigDecimal.valueOf(50), rec.getAmount());
     assertEquals(BigDecimal.valueOf(250), rec.getBalanceAfter());
@@ -145,7 +145,7 @@ class AccountTest {
   }
 
   @Test
-  void transactionRecord_nullAccountId_throwsNpe() {
+  void transactionRecord_nullAcctRef_throwsNpe() {
     assertThrows(NullPointerException.class,
         () -> new TransactionRecord(null, "DEPOSIT", BigDecimal.TEN, BigDecimal.TEN));
   }

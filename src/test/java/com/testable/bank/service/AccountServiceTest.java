@@ -93,8 +93,8 @@ class AccountServiceTest {
   void deposit_loggedAfterDeposit_recordExists() {
     service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(30));
-    assertFalse(service.getTransactionLog().isEmpty());
-    assertEquals("DEPOSIT", service.getTransactionLog().get(0).getType());
+    assertFalse(service.getLedger().isEmpty());
+    assertEquals("DEPOSIT", service.getLedger().get(0).getType());
   }
 
   @Test
@@ -367,11 +367,11 @@ class AccountServiceTest {
   // ── transaction log — cross-function data flow ────────────────────────────
 
   @Test
-  void transactionLog_afterDepositAndWithdraw_hasCorrectEntries() {
+  void ledger_afterDepositAndWithdraw_hasCorrectEntries() {
     service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(200));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(50));
     service.withdraw(ID_ALPHA, BigDecimal.valueOf(30));
-    List<com.testable.bank.model.TransactionRecord> log = service.getTransactionLog();
+    List<com.testable.bank.model.TransactionRecord> log = service.getLedger();
     assertEquals(2, log.size());
     assertEquals("DEPOSIT", log.get(0).getType());
     assertEquals("WITHDRAWAL", log.get(1).getType());
@@ -380,26 +380,26 @@ class AccountServiceTest {
   }
 
   @Test
-  void transactionLog_isCredit_trueForDeposit() {
+  void ledger_isCredit_trueForDeposit() {
     service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(10));
-    assertTrue(service.getTransactionLog().get(0).isCredit());
+    assertTrue(service.getLedger().get(0).isCredit());
   }
 
   @Test
-  void transactionLog_isCredit_falseForWithdrawal() {
+  void ledger_isCredit_falseForWithdrawal() {
     service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
     service.withdraw(ID_ALPHA, BigDecimal.valueOf(10));
-    assertFalse(service.getTransactionLog().get(0).isCredit());
+    assertFalse(service.getLedger().get(0).isCredit());
   }
 
   @Test
-  void transactionLog_toStringContainsAccountId() {
+  void ledger_toStringContainsAcctRef() {
     service.createAccount(ID_ALPHA, HOLDER_ALPHA, BigDecimal.valueOf(100));
     service.deposit(ID_ALPHA, BigDecimal.valueOf(5));
-    String repr = service.getTransactionLog().get(0).toString();
+    String repr = service.getLedger().get(0).toString();
     assertTrue(repr.contains(ID_ALPHA));
-    assertNotNull(service.getTransactionLog().get(0).getTimestamp());
+    assertNotNull(service.getLedger().get(0).getTimestamp());
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
