@@ -47,7 +47,7 @@
 
     <!-- Pinned for Supply Chain Security / Version Lag Assessment -->
     <junit.version>5.10.2</junit.version>
-    <jacoco.version>0.8.11</jacoco.version>
+    <jacoco.version>0.8.15</jacoco.version>
     <pmd.plugin.version>3.21.2</pmd.plugin.version>
     <checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
     <spotbugs.plugin.version>4.8.3.0</spotbugs.plugin.version>
